@@ -18,7 +18,7 @@
 #X msg 856 98 \; pd dsp 1;
 #X obj 861 19 loadbang;
 #X obj 866 63 delay 100;
-#X obj 175 274 comport 2 115200;
+#X obj 175 274 comport 1 115200;
 #X floatatom 547 239 5 0 0 0 - - -;
 #X obj 583 209 /;
 #X floatatom 625 175 5 0 0 0 - - -;
