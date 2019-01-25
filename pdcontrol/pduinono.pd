@@ -28,8 +28,8 @@
 #X msg 336 197 print X1!;
 #X obj 162 273 pack \$1 \$2;
 #X obj 153 349 comport 1 9600;
-#X msg 161 309 print V\$1!P\$2!;
 #X msg 45 109 50;
+#X msg 161 309 print V\$1!;
 #X connect 0 0 1 0;
 #X connect 0 0 6 0;
 #X connect 0 1 6 0;
@@ -38,14 +38,14 @@
 #X connect 6 2 9 0;
 #X connect 6 3 7 0;
 #X connect 7 0 16 0;
-#X connect 8 0 29 0;
+#X connect 8 0 28 0;
 #X connect 9 0 10 0;
 #X connect 9 1 11 0;
 #X connect 10 0 24 0;
 #X connect 10 0 17 0;
 #X connect 13 0 14 0;
 #X connect 14 0 12 0;
-#X connect 16 0 26 0;
+#X connect 16 0 29 0;
 #X connect 17 0 18 0;
 #X connect 18 0 19 0;
 #X connect 20 0 18 0;
@@ -53,8 +53,7 @@
 #X connect 22 0 20 0;
 #X connect 23 0 17 0;
 #X connect 24 0 26 1;
-#X connect 26 0 28 0;
 #X connect 27 0 3 0;
 #X connect 27 0 15 0;
-#X connect 28 0 27 0;
-#X connect 29 0 4 0;
+#X connect 28 0 4 0;
+#X connect 29 0 27 0;
