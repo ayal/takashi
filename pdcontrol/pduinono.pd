@@ -1,4 +1,4 @@
-#N canvas 268 43 1049 644 10;
+#N canvas 298 99 1049 644 10;
 #X obj 168 78 adc~;
 #X obj 144 139 env~;
 #X floatatom 141 163 5 0 0 0 - - -;
@@ -30,6 +30,8 @@
 #X obj 153 349 comport 1 9600;
 #X msg 45 109 50;
 #X msg 161 309 print V\$1!;
+#X obj 409 346 bng 15 250 50 0 empty empty empty 17 7 0 10 -262144
+-1 -1;
 #X connect 0 0 1 0;
 #X connect 0 0 6 0;
 #X connect 0 1 6 0;
