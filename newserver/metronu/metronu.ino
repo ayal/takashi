@@ -6,7 +6,7 @@
 #define LED_TYPE    WS2812
 #define COLOR_ORDER RGB
 CRGB leds[NUM_LEDS];
-CRGB buf[NUM_LEDS];
+CRGB prev[NUM_LEDS];
 
 ///
 int middle = NUM_LEDS/2;
@@ -51,10 +51,11 @@ void setup() {
     FastLED.setBrightness(  BRIGHTNESS );
     
 }
-int thresh = 40;
+int thresh = 50;
 int lastvs[] = {0,0,0};
 int lastvsi = 0;
 int tempv = 0;
+int gtill = 0;
 void loop()
 {
 
@@ -111,37 +112,44 @@ void loop()
     return;
   }
 
+   Serial.write(v);
+   
    int bright = v;
-   bright = map(bright, 0, 30, 100, 765);
+   bright = map(bright, 0, 50, 0, 765);
    bright = min(bright,765);
    
    int r = 0;
    int g = 0;
    int b = 0;
    int till = 0;
+   int hue = HUE_BLUE;
+   int boomflag = 0;
 
 if (0<bright && bright<300) {
   r=0;
   g=0;
   b=bright;
-  till = map(bright, 0, 300, 0, 10);
+  hue = HUE_BLUE;
+  till = map(bright, 0, 300, 0, 5);
+  boomflag = 0;
 
 }
 
 if (300<bright && bright<500) {
   r=bright;
-  g=0;
-  b=bright;
-  till = map(bright, 0, 500, 0, 20);
-
+  g=bright;
+  b=500-bright;
+  hue = HUE_BLUE;
+  till = map(bright, 300, 500, 0, 10);
+boomflag = 1;
 }
 
 if (500 < bright) {
   r = bright;
-  g = 0;
-  b = 0;
-   till = map(bright, 0, 500, 0, 40);
-
+  g = bright;
+  b = bright;
+   till = map(bright, 500, 765, 0, 15);
+   boomflag = 1;
 }
 
   if (v < 2) {
@@ -152,7 +160,7 @@ if (500 < bright) {
   }
 
  
-   bright = map(bright, 0,765,100,255);
+   bright = map(bright, 0,765,0,255);
    r = min(255,r/3);
    g = min(255,g/3);
    b = min(255,b/3);
@@ -161,14 +169,36 @@ if (500 < bright) {
       bright = 0;
    }
 
-      Serial.write(bright);
-
-   fill_solid(leds, NUM_LEDS, CHSV(HUE_PURPLE,255,bright));
-
-    uint8_t secondHand = (millis() / 1000) % 60;
-
-     FastLED.show();   
+     if (millis() % 3 == 0) {
+       for (int i = 0; i < gtill; i++) {
+        if (prev[middle+i].r > 0) {
+           leds[middle+i+1] = prev[middle+i];
+        }
+        if (prev[middle-i].r > 0) {
+           leds[middle-i-1] = prev[middle-i];
+        }
+       }
      
+       FastLED.show(); 
+
+        fill_solid(leds, middle - gtill, CHSV(hue,255,bright));
+        fill_solid(&leds[middle+gtill], NUM_LEDS - gtill,  CHSV(hue,255,bright));
+
+       if (prev[middle + gtill].r > 0) {
+           //fill_solid(leds, NUM_LEDS, CRGB(0,0,0));
+       }
+     }
+     
+     if (boomflag == 1) {
+        leds[middle] =  CHSV(HUE_RED,255,bright);
+        gtill = till;
+     }
+     
+     for (int i = 0; i < NUM_LEDS; i++) {
+      prev[i] = leds[i];
+     }
+   
+   FastLED.show();      
 }
 
 void FillLEDsFromPaletteColors( uint8_t colorIndex)
