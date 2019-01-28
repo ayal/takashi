@@ -43,15 +43,60 @@ TBlendType    currentBlending;
 extern CRGBPalette16 myRedWhiteBluePalette;
 extern const TProgmemPalette16 myRedWhiteBluePalette_p PROGMEM;
 
+const int num_particles = 20;
+// location, speed, direction
+const int props = 3;
+int ** particles;
 
 void setup() {
     Serial.begin(9600);
     delay( 3000 ); // power-up safety delay
     FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection( TypicalLEDStrip );
     FastLED.setBrightness(  BRIGHTNESS );
+      particles = new int*[num_particles];
+
+for(int i = 0; i < num_particles; i++) {
+    particles[i] = new int[props];
+    particles[i][0] = random(0,NUM_LEDS); // location
+    particles[i][1] = random(5,50); // speed
+    if (particles[i][0] > middle) { // direction
+      particles[i][2] = 0;
+    }
+    else {
+      particles[i][2] = 1;
+    }
+    
     
 }
-int thresh = 50;
+  
+   
+      }
+      
+
+void animate(int ** particles, CRGB color) {
+  
+  fill_solid(leds, NUM_LEDS, CRGB(0,0,0));
+   for (int i = 0; i < num_particles; i++) {
+    int* particle = particles[i];
+    
+    leds[particle[0]] = color;
+    
+    if ((millis() % particle[1]) == 0) {
+      if (particle[2] == 0) {
+        particle[0] = particle[0] + 1;
+        particle[0] =  middle + (particle[0] % middle);
+      }
+      else if (particle[2] == 1) {
+        particle[0] = particle[0] - 1;
+        if (particle[0] == -1) {
+          particle[0] = middle;
+        }
+      }
+    }
+   }
+}
+
+int thresh = 40;
 int lastvs[] = {0,0,0};
 int lastvsi = 0;
 int tempv = 0;
@@ -112,47 +157,39 @@ void loop()
     return;
   }
 
-   Serial.write(v);
+  // Serial.write(v);
    
    int bright = v;
-   bright = map(bright, 0, 50, 0, 255);
-   
-   int r = 0;
+   bright = map(bright, 0, 25, 0, 765);
+
+  int r = 0;
    int g = 0;
    int b = 0;
-   int till = 0;
-   int hue = HUE_BLUE;
-   int boomflag = 0;
-  int reds = map(bright, 0, 255, 0, 50);
-  int steps = 7;
-  for (int j = 0; j < steps; j++) {
-  for (int i = 0; i < middle; i++) {
-    if (i < reds) {
-      leds[middle + i].r += j* (bright - leds[middle + i].r) / steps;
-      leds[middle - i].r += j* (bright - leds[middle - i].r) / steps;
-    }
-    else {
-      
-    leds[middle + i].r += j* (0 - leds[middle + i].r) / steps;
-   if (leds[middle + i].r < 2) {
-        leds[middle + i].r = 0;
-      }
-
-      leds[middle - i].r += j* (0 - leds[middle - i].r) / steps / 2;
-    if (leds[middle - i].r < 2) {
-        leds[middle - i].r = 0;
-      }
-
-// blue
-      leds[middle + i].b += j* (bright - leds[middle + i].b) / steps;
-      leds[middle - i].b += j* (bright - leds[middle - i].b) / steps;
-    }
-    
-  }
-  FastLED.show();  
+   
+if (0<bright && bright<255) {
+  r=255-bright;
+  g=0;
+  b=bright;
 }
 
-     
+if (255<bright && bright<510) {
+  r=0;
+  g=bright-255;
+  b=510-bright;
+}
+
+if (510 < bright && bright<765) {
+  r = bright-510;
+  g = 765-bright;
+  b = 0;
+}
+   if (r == 0 && g == 0 && b == 0) {
+    b = 50;
+   }
+   
+    CRGB color = CRGB(r,g,b);
+   animate(particles, color);
+   
    FastLED.show();      
 }
 
