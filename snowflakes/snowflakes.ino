@@ -1,7 +1,7 @@
 #include <FastLED.h>
 
 #define LED_PIN     5
-#define NUM_LEDS    100
+#define NUM_LEDS    50
 #define BRIGHTNESS  64
 #define LED_TYPE    WS2812
 #define COLOR_ORDER RGB
@@ -43,64 +43,92 @@ TBlendType    currentBlending;
 extern CRGBPalette16 myRedWhiteBluePalette;
 extern const TProgmemPalette16 myRedWhiteBluePalette_p PROGMEM;
 
-const int num_particles = 20;
-// location, speed, direction
-const int props = 3;
+const int num_particles = 10;
+// location, speed, direction, color
+const int props = 7;
 int ** particles;
+//
+int highest = 40;
+int bassthresh = 150;
+int lastvs[] = {0,0,0};
+int lastvsi = 0;
+int tempv = 0;
+int gtill = 0;
 
 void setup() {
     Serial.begin(9600);
     delay( 3000 ); // power-up safety delay
     FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection( TypicalLEDStrip );
     FastLED.setBrightness(  BRIGHTNESS );
-      particles = new int*[num_particles];
+    particles = new int*[num_particles];
 
 for(int i = 0; i < num_particles; i++) {
     particles[i] = new int[props];
-    particles[i][0] = random(0,NUM_LEDS); // location
-    particles[i][1] = random(5,50); // speed
-    if (particles[i][0] > middle) { // direction
-      particles[i][2] = 0;
-    }
-    else {
-      particles[i][2] = 1;
-    }
-    
-    
+    particles[i][0] = -1; // location
 }
   
    
       }
       
 
-void animate(int ** particles, CRGB color) {
+void animate(int ** particles, CRGB color, int partibright) {
+  // clear (make blue, base color that becomes bright by brightness = amp)
+  int lessbright = map(partibright, 0, 255, 0, 255);
+  fill_solid(leds, NUM_LEDS, CHSV(HUE_PURPLE,255,lessbright));
   
-  fill_solid(leds, NUM_LEDS, CRGB(0,0,0));
+  //fill_solid(leds, NUM_LEDS, CHSV(0,0,0));
+ 
    for (int i = 0; i < num_particles; i++) {
     int* particle = particles[i];
+
+    if (particle[0] != -1) {
+      leds[particle[0]] = CRGB(particle[3], particle[4], particle[5]);
+      leds[particle[0]].maximizeBrightness(particle[6]);
+    }
+    bool forcedraw = false;
+    if (partibright > bassthresh && particle[0] == -1) {
+      forcedraw = true;
+      particle[1] = 6; // speed
+      particle[0] = middle + random(0,2); // location
+
+     // color + brightness
+      particle[3] = color.r;
+      particle[4] = color.g;
+      particle[5] = color.b;
+      particle[6] = partibright;
+
+      
+      
+    if (particle[0] > middle) { // direction
+      particle[2] = 0;
+    }
+    else {
+      particle[2] = 1;
+    }
+    break;
+    }
     
-    leds[particle[0]] = color;
-    
-    if ((millis() % particle[1]) == 0) {
+    if ((millis() % particle[1]) == 0 || forcedraw) {
+      if (particle[0] != -1) {
       if (particle[2] == 0) {
         particle[0] = particle[0] + 1;
-        particle[0] =  middle + (particle[0] % middle);
+        if (particle[0] == NUM_LEDS + 1) {
+          particle[0] =  -1;
+        }
       }
       else if (particle[2] == 1) {
         particle[0] = particle[0] - 1;
         if (particle[0] == -1) {
-          particle[0] = middle;
+          particle[0] = -1;
         }
       }
+      //
     }
    }
 }
+}
 
-int thresh = 40;
-int lastvs[] = {0,0,0};
-int lastvsi = 0;
-int tempv = 0;
-int gtill = 0;
+
 void loop()
 {
 
@@ -110,7 +138,7 @@ void loop()
     if (c == '!') {
       if (mode == 'V' && value[0] != 'x') {
         tempv = value.toInt();
-        tempv = tempv - thresh;
+        tempv = tempv - highest;
         if (tempv <= 0) {
           tempv = 0;
         }
@@ -153,42 +181,33 @@ void loop()
 
   }
 
-  if (v == 'x') {
-    return;
-  }
 
-  // Serial.write(v);
-   
    int bright = v;
-   bright = map(bright, 0, 25, 0, 765);
-
-  int r = 0;
-   int g = 0;
-   int b = 0;
+   bright = map(bright, 0, 50, 0, 765);
    
-if (0<bright && bright<255) {
-  r=255-bright;
-  g=0;
-  b=bright;
-}
 
-if (255<bright && bright<510) {
+int r = 0;
+ int g = 0;
+ int b = 0;
+   
+if (0<bright && bright<510) {
   r=0;
-  g=bright-255;
-  b=510-bright;
+  g=bright;
+  b = 0;
 }
 
 if (510 < bright && bright<765) {
-  r = bright-510;
-  g = 765-bright;
+  r = bright;
+  g = 0;
   b = 0;
 }
-   if (r == 0 && g == 0 && b == 0) {
-    b = 50;
-   }
    
     CRGB color = CRGB(r,g,b);
-   animate(particles, color);
+    int partibright = map(bright, 0, 765, 0, 255);
+    if (partibright > 0) {
+    Serial.write(partibright);
+    }
+   animate(particles, color, partibright);
    
    FastLED.show();      
 }
