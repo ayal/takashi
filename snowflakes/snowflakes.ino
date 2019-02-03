@@ -49,7 +49,7 @@ const int props = 7;
 int ** particles;
 //
 int highest = 40;
-int bassthresh = 150;
+int bassthresh = 100;
 int lastvs[] = {0,0,0};
 int lastvsi = 0;
 int tempv = 0;
