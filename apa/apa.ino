@@ -1,12 +1,12 @@
 #include <FastLED.h>
 
 #define LED_PIN     5
+#define CLOCK_PIN     4
 #define NUM_LEDS    144
 #define BRIGHTNESS  64
-#define LED_TYPE    WS2812
-#define COLOR_ORDER RGB
+#define LED_TYPE    DOTSTAR
+#define COLOR_ORDER BGR
 CRGB leds[NUM_LEDS];
-CRGB prev[NUM_LEDS];
 
 ///
 int middle = NUM_LEDS/2;
@@ -48,8 +48,8 @@ const int num_particles = 10;
 const int props = 7;
 int ** particles;
 //
-int highest = 50;
-int bassthresh = 100;
+int highest = 40;
+int bassthresh = 120;
 int lastvs[] = {0,0,0};
 int lastvsi = 0;
 int tempv = 0;
@@ -58,38 +58,41 @@ int gtill = 0;
 void setup() {
     Serial.begin(9600);
     delay( 3000 ); // power-up safety delay
-    FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS);
+    FastLED.addLeds<LED_TYPE, LED_PIN, CLOCK_PIN, COLOR_ORDER>(leds, NUM_LEDS);
+    //.setCorrection( TypicalLEDStrip );
     FastLED.setBrightness(  BRIGHTNESS );
     particles = new int*[num_particles];
 
 for(int i = 0; i < num_particles; i++) {
     particles[i] = new int[props];
     particles[i][0] = -1; // location
-}
-  
-   fill_solid(leds, NUM_LEDS, CRGB(0,0,0));
+}  
       }
       
 
-void animate(int ** particles, CRGB color, int partibright) {
-  // clear (make blue, base color that becomes bright by brightness = amp)
-  fill_solid(leds, NUM_LEDS, CHSV(HUE_PURPLE,255,partibright));
+void animate(int ** particles, CRGB color, int partibright, uint8_t idx) {
   
-  //fill_solid(leds, NUM_LEDS, CHSV(0,0,0));
+  fill_solid(leds, NUM_LEDS, CHSV(0,0,0));
+  int reach = map(partibright, 0, 255, 0, 50);
+  fill_solid(&leds[middle-reach], reach*2, CHSV(map(partibright,0,255,50,255),255,map(partibright,0,255,0,100)));
  
    for (int i = 0; i < num_particles; i++) {
     int* particle = particles[i];
 
     if (particle[0] != -1) {
-      leds[particle[0]] = CRGB(particle[3], particle[4], particle[5]);
-      leds[particle[0]].maximizeBrightness(particle[6]);
+      //leds[particle[0]] = CRGB(particle[3], particle[4], particle[5]);=---
+      // NEW:
+      leds[particle[0]] = CHSV(HUE_RED, 255, map(particle[6],0,255,0,100));
+      //leds[particle[0]].maximizeBrightness(particle[6]);
     }
     bool forcedraw = false;
-    if (partibright > bassthresh && particle[0] == -1) {
+    if (partibright > bassthresh && particle[0] == -1 ) { 
+      // new particle, //  && particle[0] == -1 ??
+      int location = middle + random(0,2);
+      
       forcedraw = true;
-      particle[1] = 9; // speed
-      particle[0] = middle + random(0,2); // location
-
+      particle[1] = 1; // speed
+      particle[0] = location; // location
      // color + brightness
       particle[3] = color.r;
       particle[4] = color.g;
@@ -104,10 +107,10 @@ void animate(int ** particles, CRGB color, int partibright) {
     else {
       particle[2] = 1;
     }
-    break;
+    break; // after setting new particle exit loop so we don't set all particles
     }
     
-    if ((millis() % particle[1]) == 0 || forcedraw) {
+    if ((idx % particle[1]) == 0 || forcedraw) {
       if (particle[0] != -1) {
       if (particle[2] == 0) {
         particle[0] = particle[0] + 1;
@@ -181,27 +184,14 @@ void loop()
   }
 
    int bright = v;
-   bright = map(bright, 0, 40, 0, 255);
-   int r = 0;
-   int g = 0;
-   int b = 0;
-   if (bright > 0 && bright < 100) {
-    r = 0;
-    g = 0;
-    b = bright;
-   }
+   bright = map(bright, 0, 35, 0, 255);
+    CRGB color = CRGB(0,0,0);
+    static uint8_t idx = 0;
+    idx = idx + 1; /* motion speed */
+    
+   animate(particles, color, bright, idx);
    
-   if (bright > 100 && bright < 255) {
-    r = bright;
-    g = 0;
-    b = 0;
-   }
-   
-    CRGB color = CRGB(r,g,b);
- 
-   animate(particles, color, bright);
-   
-   FastLED.show();      
+   FastLED.show();
 }
 
 void FillLEDsFromPaletteColors( uint8_t colorIndex)
