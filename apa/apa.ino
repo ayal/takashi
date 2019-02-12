@@ -49,7 +49,7 @@ const int props = 7;
 int ** particles;
 //
 int highest = 40;
-int bassthresh = 120;
+int bassthresh = 70;
 int lastvs[] = {0,0,0};
 int lastvsi = 0;
 int tempv = 0;
@@ -73,9 +73,16 @@ for(int i = 0; i < num_particles; i++) {
 void animate(int ** particles, CRGB color, int partibright, uint8_t idx) {
   
   fill_solid(leds, NUM_LEDS, CHSV(0,0,0));
-  int reach = map(partibright, 0, 255, 0, 50);
-  fill_solid(&leds[middle-reach], reach*2, CHSV(map(partibright,0,255,50,255),255,map(partibright,0,255,0,100)));
- 
+  int reach = 0;
+  if (partibright < bassthresh) {
+   reach = map(partibright, 0, bassthresh, 0, 50);
+   fill_solid(&leds[middle-reach], reach*2, CHSV(map(partibright,0,bassthresh,60,255),255,map(partibright,0,bassthresh,0,60)));
+  }
+  else {
+    reach = map(partibright, 0, bassthresh, 0, 50);
+  }
+  
+  
    for (int i = 0; i < num_particles; i++) {
     int* particle = particles[i];
 
@@ -88,10 +95,14 @@ void animate(int ** particles, CRGB color, int partibright, uint8_t idx) {
     bool forcedraw = false;
     if (partibright > bassthresh && particle[0] == -1 ) { 
       // new particle, //  && particle[0] == -1 ??
-      int location = middle + random(0,2);
+      int dir = random(0,2);
+      if (dir == 0) {
+        dir = -1;
+      }
+      int location = min(max(middle + reach*dir - 7*dir,0),NUM_LEDS-1);
       
       forcedraw = true;
-      particle[1] = 1; // speed
+      particle[1] = 2; // speed
       particle[0] = location; // location
      // color + brightness
       particle[3] = color.r;
@@ -110,7 +121,7 @@ void animate(int ** particles, CRGB color, int partibright, uint8_t idx) {
     break; // after setting new particle exit loop so we don't set all particles
     }
     
-    if ((idx % particle[1]) == 0 || forcedraw) {
+    if ((millis() % particle[1]) == 0 || forcedraw) {
       if (particle[0] != -1) {
       if (particle[2] == 0) {
         particle[0] = particle[0] + 1;
@@ -184,7 +195,17 @@ void loop()
   }
 
    int bright = v;
-   bright = map(bright, 0, 35, 0, 255);
+   bright = map(bright, 0, 60, 0, 255);
+   
+   if (v > 0 && bright > 100) {
+     Serial.write(0);
+     Serial.write(v);
+     Serial.write(bright);
+     Serial.write(1);
+   }
+
+   bright = min(bright,255);
+   
     CRGB color = CRGB(0,0,0);
     static uint8_t idx = 0;
     idx = idx + 1; /* motion speed */
