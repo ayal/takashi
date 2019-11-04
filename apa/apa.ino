@@ -75,11 +75,11 @@ void animate(int ** particles, CRGB color, int partibright, uint8_t idx) {
   fill_solid(leds, NUM_LEDS, CHSV(0,0,0));
   int reach = 0;
   if (partibright < bassthresh) {
-   reach = map(partibright, 0, bassthresh, 0, 50);
-   fill_solid(&leds[middle-reach], reach*2, CHSV(map(partibright,0,bassthresh,60,255),255,map(partibright,0,bassthresh,0,60)));
+   reach = map(partibright, 0, bassthresh, 0, 30);
+   fill_solid(&leds[middle-reach], reach*2, CHSV(map(partibright,0,bassthresh,60,255),255,map(partibright,0,bassthresh,0,40)));
   }
   else {
-    reach = map(partibright, 0, bassthresh, 0, 50);
+    reach = map(partibright, 0, bassthresh, 0, 30);
   }
   
   
